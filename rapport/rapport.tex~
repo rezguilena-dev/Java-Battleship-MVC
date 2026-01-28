@@ -1,0 +1,211 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usepackage[linesnumbered,ruled,french,onelanguage]{algorithm2e}
+
+\title{Bataille Naval en JAVA}
+\author{qql}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Présentation de l’algorithme}
+\subsection{Grille}
+Le terrain de jeu est une grille de type \textit{Grid} specifie par sa largeur et sa hauteur. Chaque cellule de la grille est un objet de type \textit{Case}, que ce soit une case de type \textit{CaseMer} ou \textit{pieceBateau}.
+Ces cases possedent un symbole de type \textit{String} qui permet de connaitre leurs appartenance. Ainsi, lors de la creation d'un bateau, ce dernier herite du symbole de son proprietaire, de meme pour chaque piece qui compose le bateau.
+Les cases vide sont representer par le symbole "\~".
+Chaque joueur possede sa propre grille, et les coups sont enregistrer dans la grille via la methode \textit{coupTire}.
+
+\subsection{Gestion des positions}
+Les positions sont gerer par la classe \textit{Position}. Ces positions permettent de se reperer et de naviguer efficacement entre l'utilisateur et le code.
+Chaque positions est constituer des coordonnees \textit{(x,y)} et d'un symbole. Ce symbole est ce qui permet de facilement se reperer sur la grille.
+
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}
+      \node (posA1Coord) at (-4,0) {$(0,0)$};
+      \node (posA1Symb) at (-2,0) {A1};
+      
+      \node (posC3Coord) at (0,0) {$(2,2)$};
+      \node (posC3Symb) at (2,0) {C3};
+      
+      \node (posJ9Coord) at (4,0) {$(9,9)$};
+      \node (posJ9Symb) at (6,0) {J9};
+    
+      \draw[latex-latex] (posA1Coord) -- (posA1Symb) node[midway, right] {};
+      \draw[latex-latex] (posC3Coord) -- (posC3Symb) node[midway, right] {};
+      \draw[latex-latex] (posJ9Coord) -- (posJ9Symb) node[midway, right] {};
+      
+    \end{tikzpicture}
+  \end{center}
+
+  \caption{Conversion des symboles}
+\end{figure}
+
+La positions prend en compte le decalage de 1 entre les coordonnee et le numero du symbole. Les conversions sont possible grace aux methodes \textit{getPositionFromSymbol} et \textit{getSymbolFromCoord} de la classe \textit{Grid}.
+
+\subsection{Gestion des bateaux}
+Les bateaux sont des objets de type \textit{Bateau}, qui sont specifier par leurs taille, leurs orientation (verticale ou horizontale) et leurs proprietaire. Seul la position de la tete du bateau importe, puisqu'avec cette position, la taille et l'orientation, on peut calculer la position du reste de la queue.
+Les bateaux existent sur la grille sous la forme d'une liste de \textit{PieceBateau}. Cette liste constitue l'attribut \textit{coque} du bateau. Egalement, ils possedent l'attribut \textit{estMort} qui est un booleen qui verifie si le bateau est effectivement couler.
+
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}
+    
+      \foreach \x in {0,1,2,3,4} {
+          \draw[thick] (\x,-1) rectangle (\x+1,0);
+      }
+      
+      \fill[black] (0.5,-0.5) circle (0.2);
+    
+      \draw[->, thick] (0,0.5) -- (5,0.5) node[midway, above] {taille};
+      \draw[->, thick] (0,-1.5) -- (5,-1.5) node[midway, below] {orientation};
+      
+      
+    \end{tikzpicture}
+  \end{center}
+
+  \caption{Representation d'un bateau}
+\end{figure}
+
+\subsection{Creation de la flotte}
+Chaque joueur possedent une flotte de bateaux, qui est une instance de la classe \textit{Flotte}. La flotte est definie par sa taille (le nombre de bateau), et possede une liste \textit{listeBateau} qui contient toute les instances \textit{Bateau} de la flotte. Lors de l'instanciation de la flotte, la methode \textit{remplisListeBateau} est appeler, et permet de creer les bateaux avec la methode \textit{creeBateau}. Cette derniere permet de placer la tete du bateau, dans une position valide. La position est considerer comme valide lorsque la potentiel queue qui suit ne depasse pas de la grille et ne rencontre pas une autre piece de bateau.
+Si la position de la tete est valide, le reste de la queue est creer.
+Une flotte est considerer detruite si tout les bateaux de sa liste sont coulee.
+
+\section{La gestion des joueurs}
+Une partie est tout le temps jouer par le joueur 1 (qui est un joueur humain), et le joueur 2 (qui est une ia parmis 3 choix).
+Les joueurs heritent d'une classe abstraite \textit{Player}, et obtiennent le coups desirer via la methode \textit{action}.
+Un joueur est definie par son symbole (qui permet de le differencier de l'autre joueur) et sa flotte. Egalement, ils possedent chacun les attributs \textit{listeTirPossible} et \textit{listePositionTir}, qui sont des listes de position de type \textit{List<Position>}. 
+\begin{itemize}
+  \item l'attribut \textit{listeTirPossible} contient les positions qui sont des coups valident. Cette liste est remplis lors de la creation de l'instance du joueur, et contient toutes les positions qui ne sont pas associer a un bateau du joueur (pour eviter de se tirer dessus). Lorsque le joueur choisi un coup valide, la position associer au coup est retirer de la liste. Ainsi, le calcul des coups valident ne se fait qu'une fois, au debut de la partie, et permet d'eviter de tirer 2 fois au meme endroit puisque la position n'est plus dans la liste et donc invalide.
+  \item l'attribut \textit{listePositionTir} contient les positions deja tirer par le joueur. Lorsqu'un coup est choisi, la position associer a ce coup est ajouter a la liste. Cela permet de bien distinguer les coups entre les joueurs, notamment lors de l'affichage graphique.
+\end{itemize}
+  
+Bien que ces attributs soient communs entre les joueurs, chacun d'entre eux possedent des subtiliter sur la gestion des coups.
+\subsection{Amiral (joueur Humain)}
+Le joueur 1 est obligatoirement jouer par un humain, qui est representer par une instance de la classe \textit{Amiral}.
+Le joueur se distingue par sa capaciter a pouvoir choisir une position avec un clique sur la vue (lorsqu'on joue avec l'affichage graphique) ou alors directement en entrant un symbole associer a la position voulue (lorsqu'on joue avec le terminal).
+Si la position associer au clique est $null$, alors c'est que le joueur joue avec le terminal.
+Son symbole est "X".
+
+\subsection{Ia Folle (mode facile)}
+Un type du joueur 2, qui est une instance de \textit{IaFolle}.
+Les coups choisi par ce joueur sont purement aleatoire, qu'elle pioche directement dans la liste de coups valide. Aucune reflexion, aucune strategie, juste de la pure destruction.
+Son symbole est "O".
+
+\subsection{Ia Pseudo Intelligente (mode normale)}
+Ce joueur est une instance de la classe \textit{IaPseudoIntelligente}. Elle a la particulariter de "reflechir" un minimum lors de la partie.
+Tant que sont dernier tir n'a pas toucher de bateau adverse, elle reste en mode recherche, ou elle tir de facon optimiser pour ne tirer aleatoirement que sur les positions impaire de la grille (bien sur, toujours selon la liste de coups possible). Cependant, lorsqu'elle touche une cible ennemi, elle passe en mode chasse. Dans ce mode, elle sauvegarde la position du dernier tir reussi, et remplis la liste \textit{listePositionVoisin} qui sauvegarde les 4 positions alentour, en forme de croix (si ce sont des positions valide). Des lors, elle ne va tirer que sur ces positions sauvegarder, et ce jusqu'a que la liste soit vider. Si en cours de route elle tire sur une autre piece de bateau ennemi, les positions alentours sont egalement ajouter a la liste \textit{listePositionVoisin}, et ainsi de suite. Ainsi, lorsqu'elle touche un bateau, elle est garantit de le detruire dans les tours suivant.
+
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}
+        % Première figure (à gauche)
+        \begin{scope}[shift={(0,0)}] % Décalage pour la première figure
+            % Dessiner le bateau (4 carrés)
+            \foreach \y in {0,1,2,3} {
+                \draw[thick] (0,\y) rectangle (1,\y+1);
+            }
+            % Tir rouge
+            \fill[red] (0.5,2.5) circle (0.2);
+        \end{scope}
+        
+        \node (bateauTir1) at (0.5,-0.5) {Tir reussi};
+        \node[text width=2cm, align=center] (bateauTir2) at (5.5,-1) {Position alentour \\ sauvegarder};
+        \draw[->, thick] (2.2,1.5) -- (3.8,1.5);
+        % Deuxième figure (à droite)
+        \begin{scope}[shift={(5,0)}] % Décalage pour la deuxième figure
+            % Dessiner le bateau (4 carrés)
+            \foreach \y in {0,1,2,3} {
+                \draw[thick] (0,\y) rectangle (1,\y+1);
+            }
+            
+            
+            % Tir rouges semi-transparents juste en haut et en bas
+            \foreach \dy in {1,3} {
+                \fill[red!50, opacity=0.5] (0.5,\dy+0.5) circle (0.2);
+            }
+            
+            % Tirs bleus transparents autour du bateau
+            \foreach \dx/\dy in {-1/2, 1/2} {
+                \fill[blue!50, opacity=0.5] (\dx+0.5,\dy+0.5) circle (0.2);
+                \draw[->, thick, blue] (0.5,2.5) -- (\dx+0.5,\dy+0.5);
+            }
+            
+            % Flèches reliant le tir rouge aux nouveaux tirs rouges
+            \foreach \dy in {1,3} {
+                \draw[->, thick, red] (0.5,2.5) -- (0.5,\dy+0.5);
+            }
+            % Tir rouge (même position)
+            \fill[red] (0.5,2.5) circle (0.2);
+        \end{scope}
+    \end{tikzpicture}
+  \end{center}
+
+  \caption{Representation de la strategie de l'ia}
+\end{figure}
+
+Dans le pire des cas, le nombre de tour avant la destruction du bateau vaut: $nbTour = 3 * t + 2$
+et dans le meilleur des cas, il vaut: $nbTour = t$
+Avec $t$ la taille du tableau.
+Cependant, avec cette Ia, le pire des cas est tout le temps le cas, puisqu'elle n'actualise pas sa liste \textit{listePositionVoisin} dynamiquement, dans le sens ou elle ne va pas suivre l'orientation du bateau, et continuer de tirer parmis les positions de la liste, et ce meme lorsque le bateau est deja detruit (d'ou le "pseudo intelligente").
+Son symbole est "@".
+
+\subsection{TERMINATOR (mode difficile)}
+Le TERMINATOR n'est pas senser etre battue. C'est une instance de la classe \textit{Terminator}. Grace a ses connaissance superieure, il connait precisement chaque positions des bateaux adverses. Sa liste 
+\textit{listeTirPossible} contient directement chaque positions des bateaux adverse. Si votre premier tir echoue, la partie est mathematiquement perdue.
+Son symbole est "\#".
+
+\section{Vue et Controleur}
+Le joueur peut choisir si il veut jouer sur le terminal ou avec une interface graphique. Il y a pour chacun des 2 cas une vue et un controleur.
+La vue s'actualise a chaque tour d'un joueur, grace a un ecouteur \textit{AbstractModeleEcoutable} ajouter au modele. A chaque fois que la methode \textit{execute} est lancer par le modele (qui correspond a un tour d'un joueur), le changement est notifier par la methode \textit{modeleMisAJour} de la vue, qui implemente l'interface \textit{EcouteurModele}.
+
+\subsection{Vue et Controleur terminal}
+Pour une partie avec un terminal, des instances de \textit{ControleurTerminal} et \textit{VueTerminal} sont creer.
+Le joueur humain joue avec le clavier, en entrant un coup valide selon son symbole (A1, B5, ect...).
+La partie est fini lorsque la flotte d'un des 2 joueur est coulee.
+
+\subsection{Vue et Controleur graphique}
+Pour une partie avec une interface graphique, des instances de \textit{JeuControleur} et \textit{VueNaval} sont creer, ainsi que \textit{NavalGUI}.
+Le joueur humain joue avec le clique de la souris. L'interface graphique se divise en 2 grille, qui sont dessiner l'une apres l'autre. Les tirs en rouge correspondent a un tir qui a touchee, et ceux en bleu representent les tirs ratee.
+\begin{itemize}
+  \item Celle de gauche represente la grille du joueur. Elle n'est pas cliquable, et les bateaux du joueur ainsi que les tirs de l'ordis y sont representer.
+  \item Celle de droite represente la grille de l'ordis. Elle est cliquable, et les tirs du joueur sont representer la dessus. Lorsqu'un bateau adverse est couler, sa silhouette se dessine.
+\end{itemize}
+
+Lors du dessin de la grille, pour la flotte, il suffit de recuperer la liste de bateau de la flotte du joueur. Avec la position connue de la tete de chaque bateau, sa taille et son orientation, on peut facilement calculer les coordonner pour afficher le corps du bateau.
+Pour les tirs, on recupere la liste des coups deja tirer par le joueur. Si, a cette position, la case de la grille contient une instance d'une piece de bateau, alors un cercle rouge s'affiche, ou bleu sinon.
+Cela permet d'eviter de parcourir l'entiereter des 2 grille a chaque dessin.
+
+\begin{figure}[ht]
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{partieExemple.png}
+    \caption{Exemple de l'affichage}
+  \end{center}
+\end{figure}
+
+La gestion du clique se fait par le controleur. Lors de la creation de la vue, on abonne a ce dernier le controleur. Lors du clique de la souris, la coordonner est recuperer par la methode \textit{mouseClicked}. Apres les calculs en fonction de la fenetre, ces coordonner sont verifier pour qu'elles soient a la fois dans les dimensions de la grille, et a la fois valident, en verifiant si la coordonner obtenus est bien dans la liste des coups possible du joueur.
+
+Egalement, la vue est contenue dans le GUI, qui est une instance de la classe \textit{NavalGUI}. Le GUI actualise dynamiquement les derniers coups jouer par le joueur et l'ia a chaque tour, via le controleur.
+
+\subsection{La fenetre parametrable}
+Les parties sont personalisable selon 3 parametres, qui sont:
+\begin{itemize}
+  \item La taille de la grille. Plutot explicite, on peut choisir une petite grille ($5*5$ avec 2 bateau par joueur), une grille modeste ($10*10$ avec 5 bateau par joueur) et une grande grille ($15*15$ avec 7 bateau par joueur).
+  \item La difficulter. L'Ia folle represente la difficulter facile, l'Ia Pseudo-Intelligente la difficulter normale, tandis que le TERMINATOR represente la difficulter difficile (ou plutot impossible).
+  \item L'affichage, qui peut soit etre l'affichage graphique ou alors l'affichage par terminale.
+\end{itemize}
+Apres les bonnes options choisie, la partie debute.
+
+\end{document}
