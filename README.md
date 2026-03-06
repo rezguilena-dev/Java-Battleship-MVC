@@ -10,22 +10,41 @@
 Ce projet propose une version robuste et modulaire de la Bataille Navale, développée en respectant le patron de conception **MVC (Modèle-Vue-Contrôleur)**. Il permet d'affronter l'ordinateur via une interface graphique interactive ou en ligne de commande, avec plusieurs niveaux de difficulté.
 
 ---
+##  Aperçu du jeu
+### Écran d'accueil et configuration
+Aperçu du menu principal permettant de paramétrer la partie (taille de grille, difficulté, modes).
 
+<img src="images/acceuil.png" alt="Menu de configuration" width="600"/>
+
+---
+
+### Affrontement en cours (Mode Graphique)
+Visualisation de la grille de jeu interactive (Swing). Rouge pour touché, bleu pour à l'eau.
+
+<img src="images/jeu.png" alt="interface graphique" width="600"/>
+
+---
+### Affrontement en cours (Mode Terminal)
+
+Aperçu de l'interface en ligne de commande .
+
+<img src="images/terminal.png" alt="Affichage terminal" width="600"/>
+
+---
 ## Fonctionnalités Implémentées :
-
-* **Architecture MVC :** Séparation  entre la logique metier , l'affichage et le contrôle pour une maintenabilité maximale.
+* **Architecture MVC :** Séparation  entre la logique métier , l'affichage et le contrôle pour une maintenabilité maximale.
 * **Double Interface :**
      * **Mode Terminal :** Interface en ligne de commande (CLI) via saisie textuelle (ex: "A1").
      * **Mode Graphique (GUI) :** Interface interactive à la souris avec visualisation des tirs (rouge pour touché, bleu pour à l'eau).
 * **Personnalisation  :**
-    * Selection de la dimension de la grille : Petite (5x5), Moyenne (10x10) ou Grande (15x15).
+    * Sélection de la dimension de la grille : Petite (5x5), Moyenne (10x10) ou Grande (15x15).
     * Gestion dynamique de la flotte selon l'espace de jeu .
 
 ---
 
 ##  Intelligence Artificielle (IA)
 
-Le jeu propose 3 intelligences artificielles à la difficulté progressive:
+Le jeu propose 3 intelligences artificielles de difficulté progressive:
 
 | Niveau | IA | Description et Stratégie |
 | :--- | :--- | :--- |
@@ -51,7 +70,7 @@ java -cp dist/ game.modele.jeu.Main
 ```
 
 ### 3.Documentation Technique :
-La documentation complète du code est disponible. et peut être génerée avec la ligne de commande qui suit  :
+La documentation complète du code est disponible et peut être générée avec la ligne de commande qui suit  :
 ```
 javadoc -d javadoc -sourcepath src -subpackages game
 ```
